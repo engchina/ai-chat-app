@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Message } from '../types/chat';
-import { fetchChatResponse } from '../services/openaiService';
-import { NetworkError, ClientError, ServerError } from '../types/error';
+import React, {useState, useEffect, useRef} from 'react';
+import {Message} from '../types/chat';
+import {fetchChatResponse} from '../services/openaiService';
+import {NetworkError, ClientError, ServerError} from '../types/error';
 
 const Chat: React.FC = () => {
     const [messages, setMessages] = useState<Message[]>([]);
@@ -10,7 +10,7 @@ const Chat: React.FC = () => {
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        messagesEndRef.current?.scrollIntoView({behavior: 'smooth'});
     };
 
     useEffect(() => {
@@ -20,7 +20,7 @@ const Chat: React.FC = () => {
     const handleSendMessage = async () => {
         if (input.trim() === '' || isLoading) return;
 
-        const newMessage: Message = { role: 'user', content: input.trim() };
+        const newMessage: Message = {role: 'user', content: input.trim()};
         setMessages(prev => [...prev, newMessage]);
         setInput('');
         setIsLoading(true);
@@ -36,10 +36,10 @@ const Chat: React.FC = () => {
             let accumulatedData = '';
 
             while (true) {
-                const { done, value } = await reader.read();
+                const {done, value} = await reader.read();
                 if (done) break;
 
-                accumulatedData += decoder.decode(value, { stream: true });
+                accumulatedData += decoder.decode(value, {stream: true});
                 const lines = accumulatedData.split('\n');
                 accumulatedData = lines.pop() || '';
 
@@ -48,6 +48,7 @@ const Chat: React.FC = () => {
                         const data = line.slice(6);
                         if (data === '[DONE]') {
                             console.log('Stream complete');
+                            break;
                         } else {
                             try {
                                 const json = JSON.parse(data);
@@ -65,7 +66,7 @@ const Chat: React.FC = () => {
                                         } else {
                                             return [
                                                 ...prev,
-                                                { role: 'assistant', content: json.choices[0].delta.content },
+                                                {role: 'assistant', content: json.choices[0].delta.content},
                                             ];
                                         }
                                     });
@@ -91,14 +92,14 @@ const Chat: React.FC = () => {
 
             setMessages(prev => [
                 ...prev,
-                { role: 'assistant', content: errorMessage },
+                {role: 'assistant', content: errorMessage},
             ]);
         } finally {
             setIsLoading(false);
         }
     };
 
-    const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleSendMessage();
@@ -107,7 +108,6 @@ const Chat: React.FC = () => {
 
     return (
         <div className="chat-container">
-            {/* 新增的 header */}
             <header className="chat-header">
                 <h1>AI Chatbot</h1>
             </header>
@@ -118,14 +118,14 @@ const Chat: React.FC = () => {
                         <div className="message-content">{message.content}</div>
                     </div>
                 ))}
-                <div ref={messagesEndRef} />
+                <div ref={messagesEndRef}/>
             </div>
             <div className="chat-input">
                 <input
                     type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyPress}
+                    onKeyDown={handleKeyDown}
                     placeholder="Type a message..."
                     disabled={isLoading}
                 />
