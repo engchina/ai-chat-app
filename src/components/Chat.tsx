@@ -8,6 +8,8 @@ const Chat: React.FC = () => {
     const [input, setInput] = useState<string>('');
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const [isCopied, setIsCopied] = useState(new Array(messages.length).fill(false));
+    const timeoutRef = useRef<NodeJS.Timeout>();
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({behavior: 'smooth'});
@@ -99,11 +101,41 @@ const Chat: React.FC = () => {
         }
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        // 检测按下Alt+Enter的情况
+        if (e.altKey && e.key === 'Enter') {
+            e.preventDefault(); // 阻止默认的表单提交或其他行为
+            setInput(prevInput => prevInput + '\n');
+        }
+
+        if (e.key === 'Enter' && !e.shiftKey && !e.altKey) {
             e.preventDefault();
             handleSendMessage();
         }
+    };
+
+    const handleCopyMessage = (content: string, index: number) => {
+        navigator.clipboard.writeText(content).then(() => {
+            setIsCopied(prev => {
+                const temp = [...prev];
+                temp[index] = true;
+                return temp;
+            });
+
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+            }
+
+            timeoutRef.current = setTimeout(() => {
+                setIsCopied(prev => {
+                    const temp = [...prev];
+                    temp[index] = false;
+                    return temp;
+                });
+            }, 2000);
+        }).catch(error => {
+            console.error('Failed to copy:', error);
+        });
     };
 
     return (
@@ -115,19 +147,27 @@ const Chat: React.FC = () => {
             <div className="chat-window">
                 {messages.map((message, index) => (
                     <div key={index} className={`message ${message.role}`}>
-                        <div className="message-content">{message.content}</div>
+                        <div className="message-content">
+                            {message.content}
+                            <button
+                                className={`copy-button ${isCopied[index] ? 'copied' : ''}`}
+                                onClick={() => handleCopyMessage(message.content, index)}
+                            >
+                                {isCopied[index] ? "Copied" : "Copy"}
+                            </button>
+                        </div>
                     </div>
                 ))}
                 <div ref={messagesEndRef}/>
             </div>
             <div className="chat-input">
-                <input
-                    type="text"
+                <textarea
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Type a message..."
                     disabled={isLoading}
+                    rows={4}
                 />
                 <button
                     onClick={handleSendMessage}
